@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Target, Zap, Monitor, Battery, TrendingUp, Clock } from 'lucide-react';
+import { Target, Monitor, TrendingUp, Clock } from 'lucide-react';
 
 interface UIProps {
   metrics: {
@@ -17,10 +17,16 @@ interface UIProps {
 }
 
 export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange }) => {
-  const energyPercentage = Math.min((metrics.totalEnergy / 100) * 100, 100);
-  
   // Convert time scale to percentage for display (1.0 = 100%, 0.1 = 10%)
   const timeScalePercentage = Math.round(timeScale * 100);
+  
+  // Sort primitive distribution alphabetically to prevent twitching
+  const sortedPrimitiveDistribution = Object.entries(metrics.primitiveDistribution)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .reduce((acc, [key, value]) => {
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, number>);
   
   return (
     <div className="absolute top-4 left-4 z-10 space-y-4 font-monda">
@@ -107,33 +113,22 @@ export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange })
         </div>
       </div>
 
-      {/* Main Metrics Panel */}
+      {/* Simulation Status Panel */}
       <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-cyan-500 rounded-lg p-4 text-white min-w-64">
         <h2 className="text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">
-          <Activity className="w-5 h-5" />
-          Physics Simulation
+          <Target className="w-5 h-5" />
+          Simulation Status
         </h2>
         
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-gray-300 flex items-center gap-1">
-              <Zap className="w-4 h-4" />
-              Velocity:
-            </span>
+            <span className="text-gray-300">Ball Velocity:</span>
             <span className="text-cyan-400 font-mono">{metrics.ballVelocity.toFixed(2)} m/s</span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-gray-300 flex items-center gap-1">
-              <Target className="w-4 h-4" />
-              Primitives:
-            </span>
+            <span className="text-gray-300">Active Primitives:</span>
             <span className="text-green-400 font-mono">{metrics.activePrimitives}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Collisions:</span>
-            <span className="text-orange-400 font-mono">{metrics.collisionCount}</span>
           </div>
           
           <div className="flex justify-between items-center">
@@ -148,38 +143,6 @@ export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange })
         </div>
       </div>
 
-      {/* Energy Panel */}
-      <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-yellow-500 rounded-lg p-4 text-white min-w-64">
-        <h3 className="text-md font-bold text-yellow-400 mb-2 flex items-center gap-2">
-          <Battery className="w-4 h-4" />
-          Energy Analysis
-        </h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Kinetic:</span>
-            <span className="text-yellow-300 font-mono">{metrics.kineticEnergy.toFixed(2)} J</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Potential:</span>
-            <span className="text-blue-300 font-mono">{metrics.potentialEnergy.toFixed(2)} J</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-300">Total:</span>
-            <span className="text-white font-mono font-bold">{metrics.totalEnergy.toFixed(2)} J</span>
-          </div>
-          
-          {/* Energy Bar */}
-          <div className="mt-2">
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(energyPercentage, 100)}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Primitive Distribution Panel */}
       <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-purple-500 rounded-lg p-4 text-white min-w-64">
         <h3 className="text-md font-bold text-purple-400 mb-2 flex items-center gap-2">
@@ -187,7 +150,7 @@ export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange })
           Primitive Distribution
         </h3>
         <div className="space-y-1 text-sm">
-          {Object.entries(metrics.primitiveDistribution).map(([type, count]) => (
+          {Object.entries(sortedPrimitiveDistribution).map(([type, count]) => (
             <div key={type} className="flex justify-between items-center">
               <span className="text-gray-300 capitalize">{type}:</span>
               <span className="text-purple-300 font-mono">{count}</span>

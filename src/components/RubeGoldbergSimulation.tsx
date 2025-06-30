@@ -22,8 +22,8 @@ const RubeGoldbergSimulation: React.FC = () => {
     totalEnergy: 0
   });
   
-  // Time scale state for slow motion control (1.0 = normal speed, 0.1 = 10% speed)
-  const [timeScale, setTimeScale] = useState<number>(1.0);
+  // Time scale state for slow motion control - default to 50% speed
+  const [timeScale, setTimeScale] = useState<number>(0.5);
 
   useEffect(() => {
     if (!mountRef.current) return;
