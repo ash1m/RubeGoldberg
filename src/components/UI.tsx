@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Target, Zap, Monitor, Battery, TrendingUp } from 'lucide-react';
+import { Activity, Target, Zap, Monitor, Battery, TrendingUp, Clock } from 'lucide-react';
 
 interface UIProps {
   metrics: {
@@ -12,13 +12,101 @@ interface UIProps {
     potentialEnergy: number;
     totalEnergy: number;
   };
+  timeScale: number;
+  onTimeScaleChange: (scale: number) => void;
 }
 
-export const UI: React.FC<UIProps> = ({ metrics }) => {
+export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange }) => {
   const energyPercentage = Math.min((metrics.totalEnergy / 100) * 100, 100);
+  
+  // Convert time scale to percentage for display (1.0 = 100%, 0.1 = 10%)
+  const timeScalePercentage = Math.round(timeScale * 100);
   
   return (
     <div className="absolute top-4 left-4 z-10 space-y-4 font-monda">
+      {/* Time Control Panel */}
+      <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-orange-500 rounded-lg p-4 text-white min-w-64">
+        <h3 className="text-md font-bold text-orange-400 mb-3 flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          Time Control
+        </h3>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-300">Speed:</span>
+            <span className="text-orange-300 font-mono">{timeScalePercentage}%</span>
+          </div>
+          
+          {/* Slow Motion Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Slow</span>
+              <span>Normal</span>
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="1.0"
+              step="0.05"
+              value={timeScale}
+              onChange={(e) => onTimeScaleChange(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #f97316 0%, #f97316 ${timeScalePercentage}%, #374151 ${timeScalePercentage}%, #374151 100%)`
+              }}
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>10%</span>
+              <span>100%</span>
+            </div>
+          </div>
+          
+          {/* Quick preset buttons */}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => onTimeScaleChange(0.1)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                timeScale === 0.1 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              10%
+            </button>
+            <button
+              onClick={() => onTimeScaleChange(0.25)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                timeScale === 0.25 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              25%
+            </button>
+            <button
+              onClick={() => onTimeScaleChange(0.5)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                timeScale === 0.5 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              50%
+            </button>
+            <button
+              onClick={() => onTimeScaleChange(1.0)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                timeScale === 1.0 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              100%
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Metrics Panel */}
       <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-cyan-500 rounded-lg p-4 text-white min-w-64">
         <h2 className="text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">

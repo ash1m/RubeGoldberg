@@ -21,6 +21,9 @@ const RubeGoldbergSimulation: React.FC = () => {
     potentialEnergy: 0,
     totalEnergy: 0
   });
+  
+  // Time scale state for slow motion control (1.0 = normal speed, 0.1 = 10% speed)
+  const [timeScale, setTimeScale] = useState<number>(1.0);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -43,16 +46,19 @@ const RubeGoldbergSimulation: React.FC = () => {
     let accumulatedTime = 0;
     const fixedTimeStep = 1 / 60; // 60 FPS physics
 
-    // Animation loop with fixed timestep physics
+    // Animation loop with fixed timestep physics and time scaling
     const animate = () => {
       const currentTime = performance.now();
-      const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta time
+      let deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta time
       lastTime = currentTime;
+      
+      // Apply time scale to delta time for slow motion effect
+      deltaTime *= timeScale;
       accumulatedTime += deltaTime;
 
-      // Fixed timestep physics updates
+      // Fixed timestep physics updates with time scaling
       while (accumulatedTime >= fixedTimeStep) {
-        // Apply forces and integrate physics
+        // Apply forces and integrate physics with scaled time
         physicsEngine.integrateForces(ball, ball.id, fixedTimeStep);
         
         // Update ball position
@@ -81,12 +87,12 @@ const RubeGoldbergSimulation: React.FC = () => {
         accumulatedTime -= fixedTimeStep;
       }
 
-      // Update visual components with interpolation
+      // Update visual components with interpolation and time scaling
       const alpha = accumulatedTime / fixedTimeStep;
       ball.update(deltaTime);
 
-      // Update space particles with parallax effect
-      spaceParticles.update(deltaTime);
+      // Update space particles with parallax effect (use original deltaTime for smooth visuals)
+      spaceParticles.update((currentTime - lastTime) / 1000);
 
       // Update camera
       sceneManager.updateCamera(ball.position);
@@ -106,8 +112,8 @@ const RubeGoldbergSimulation: React.FC = () => {
         setMetrics(updatedMetrics);
       }
 
-      // Performance monitoring
-      performanceManager.update(deltaTime);
+      // Performance monitoring (use original deltaTime)
+      performanceManager.update((currentTime - lastTime) / 1000);
 
       // Render
       sceneManager.render();
@@ -133,12 +139,20 @@ const RubeGoldbergSimulation: React.FC = () => {
       }
       sceneManager.dispose();
     };
-  }, []);
+  }, [timeScale]); // Re-run effect when timeScale changes
+
+  const handleTimeScaleChange = (newTimeScale: number) => {
+    setTimeScale(newTimeScale);
+  };
 
   return (
     <div className="relative w-full h-full">
       <div ref={mountRef} className="w-full h-full" />
-      <UI metrics={metrics} />
+      <UI 
+        metrics={metrics} 
+        timeScale={timeScale}
+        onTimeScaleChange={handleTimeScaleChange}
+      />
     </div>
   );
 };
