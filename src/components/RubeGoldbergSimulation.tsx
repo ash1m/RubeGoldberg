@@ -5,6 +5,7 @@ import { Ball } from '../entities/Ball';
 import { PrimitiveManager } from '../managers/PrimitiveManager';
 import { MetricsManager } from '../managers/MetricsManager';
 import { PerformanceManager } from '../utils/PerformanceManager';
+import { SpaceParticles } from '../effects/SpaceParticles';
 import { UI } from './UI';
 import { SimulationMetrics } from '../types';
 
@@ -29,6 +30,9 @@ const RubeGoldbergSimulation: React.FC = () => {
     const physicsEngine = new PhysicsEngine();
     const performanceManager = new PerformanceManager();
     const metricsManager = new MetricsManager();
+
+    // Initialize space particles effect
+    const spaceParticles = new SpaceParticles(sceneManager.scene, sceneManager.camera);
 
     // Initialize entities
     const ball = new Ball(sceneManager.scene);
@@ -81,6 +85,9 @@ const RubeGoldbergSimulation: React.FC = () => {
       const alpha = accumulatedTime / fixedTimeStep;
       ball.update(deltaTime);
 
+      // Update space particles with parallax effect
+      spaceParticles.update(deltaTime);
+
       // Update camera
       sceneManager.updateCamera(ball.position);
 
@@ -120,6 +127,7 @@ const RubeGoldbergSimulation: React.FC = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       physicsEngine.clearForces(ball.id);
+      spaceParticles.dispose();
       if (mountRef.current && sceneManager.renderer.domElement) {
         mountRef.current.removeChild(sceneManager.renderer.domElement);
       }
