@@ -15,7 +15,10 @@ const RubeGoldbergSimulation: React.FC = () => {
     activePrimitives: 0,
     collisionCount: 0,
     fps: 0,
-    primitiveDistribution: {}
+    primitiveDistribution: {},
+    kineticEnergy: 0,
+    potentialEnergy: 0,
+    totalEnergy: 0
   });
 
   useEffect(() => {
@@ -33,25 +36,50 @@ const RubeGoldbergSimulation: React.FC = () => {
 
     let frameCount = 0;
     let lastTime = performance.now();
+    let accumulatedTime = 0;
+    const fixedTimeStep = 1 / 60; // 60 FPS physics
 
-    // Animation loop
+    // Animation loop with fixed timestep physics
     const animate = () => {
       const currentTime = performance.now();
-      const deltaTime = (currentTime - lastTime) / 1000;
+      const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta time
       lastTime = currentTime;
+      accumulatedTime += deltaTime;
 
-      // Update ball
-      ball.update(deltaTime);
+      // Fixed timestep physics updates
+      while (accumulatedTime >= fixedTimeStep) {
+        // Apply forces and integrate physics
+        physicsEngine.integrateForces(ball, ball.id, fixedTimeStep);
+        
+        // Update ball position
+        physicsEngine.updatePosition(ball, fixedTimeStep);
 
-      // Update primitives
-      primitiveManager.update(ball.position, deltaTime);
+        // Update primitives
+        primitiveManager.update(ball.position, fixedTimeStep);
 
-      // Check collisions
-      const collisions = primitiveManager.checkCollisions(ball);
-      if (collisions.length > 0) {
-        ball.handleCollisions(collisions);
-        primitiveManager.handleCollisions(collisions);
+        // Check collisions
+        const collisions = primitiveManager.checkCollisions(ball);
+        if (collisions.length > 0) {
+          // Resolve collisions with proper physics
+          collisions.forEach(collision => {
+            physicsEngine.resolveCollision(ball, collision, ball.id);
+          });
+          
+          ball.handleCollisions(collisions);
+          primitiveManager.handleCollisions(collisions);
+        }
+
+        // Occasionally add random forces to maintain interesting motion
+        if (Math.random() < 0.001) { // 0.1% chance per frame
+          physicsEngine.addRandomForce(ball.id, 2);
+        }
+
+        accumulatedTime -= fixedTimeStep;
       }
+
+      // Update visual components with interpolation
+      const alpha = accumulatedTime / fixedTimeStep;
+      ball.update(deltaTime);
 
       // Update camera
       sceneManager.updateCamera(ball.position);
@@ -63,7 +91,10 @@ const RubeGoldbergSimulation: React.FC = () => {
           ball.velocity.length(),
           primitiveManager.getActivePrimitiveCount(),
           primitiveManager.getPrimitiveDistribution(),
-          collisions.length
+          0, // Collision count handled separately
+          ball.getKineticEnergy(),
+          ball.getPotentialEnergy(),
+          ball.getTotalEnergy()
         );
         setMetrics(updatedMetrics);
       }
@@ -88,6 +119,7 @@ const RubeGoldbergSimulation: React.FC = () => {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      physicsEngine.clearForces(ball.id);
       if (mountRef.current && sceneManager.renderer.domElement) {
         mountRef.current.removeChild(sceneManager.renderer.domElement);
       }
