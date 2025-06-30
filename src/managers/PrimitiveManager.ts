@@ -18,6 +18,7 @@ export class PrimitiveManager {
   private physicsEngine: PhysicsEngine;
   private primitivePool: Map<PrimitiveType, BasePrimitive[]> = new Map();
   private lastSpawnPosition = new THREE.Vector3();
+  private ballVelocityHistory: THREE.Vector3[] = [];
 
   private readonly primitiveTypes: PrimitiveType[] = [
     'sphere', 'box', 'cylinder', 'cone', 'torus', 'plane', 'dodecahedron'
@@ -71,25 +72,80 @@ export class PrimitiveManager {
     }
   }
 
+  private predictBallPath(ballPosition: THREE.Vector3, ballVelocity: THREE.Vector3): THREE.Vector3[] {
+    const pathPoints: THREE.Vector3[] = [];
+    const steps = 10; // Predict 10 steps ahead
+    const timeStep = 0.5; // Half second per step
+    
+    let pos = ballPosition.clone();
+    let vel = ballVelocity.clone();
+    
+    for (let i = 0; i < steps; i++) {
+      // Simple physics prediction (gravity + current velocity)
+      vel.y += -9.81 * timeStep; // Apply gravity
+      pos.add(vel.clone().multiplyScalar(timeStep));
+      pathPoints.push(pos.clone());
+    }
+    
+    return pathPoints;
+  }
+
+  private isPositionNearPath(position: THREE.Vector3, pathPoints: THREE.Vector3[]): boolean {
+    const maxDistance = 15; // Maximum distance from predicted path
+    
+    return pathPoints.some(pathPoint => 
+      position.distanceTo(pathPoint) < maxDistance
+    );
+  }
+
   update(ballPosition: THREE.Vector3, deltaTime: number): void {
+    // Track ball velocity history for better path prediction
+    this.ballVelocityHistory.push(ballPosition.clone());
+    if (this.ballVelocityHistory.length > 5) {
+      this.ballVelocityHistory.shift();
+    }
+
     this.generatePrimitives(ballPosition);
     this.updatePrimitives(deltaTime);
     this.cleanupPrimitives(ballPosition);
   }
 
   private generatePrimitives(ballPosition: THREE.Vector3): void {
-    if (this.primitives.length >= SIMULATION_CONSTANTS.MAX_PRIMITIVES) return;
+    // Reduce max primitives for better performance and more targeted generation
+    if (this.primitives.length >= 15) return;
 
     const spawnDistance = this.lastSpawnPosition.distanceTo(ballPosition);
-    if (spawnDistance < SIMULATION_CONSTANTS.MIN_SPACING) return;
+    if (spawnDistance < SIMULATION_CONSTANTS.MIN_SPACING * 2) return;
+
+    // Calculate ball velocity from history
+    let ballVelocity = new THREE.Vector3();
+    if (this.ballVelocityHistory.length >= 2) {
+      const current = this.ballVelocityHistory[this.ballVelocityHistory.length - 1];
+      const previous = this.ballVelocityHistory[this.ballVelocityHistory.length - 2];
+      ballVelocity = current.clone().sub(previous);
+    }
+
+    // Predict ball path
+    const pathPoints = this.predictBallPath(ballPosition, ballVelocity);
 
     const randomType = this.primitiveTypes[Math.floor(Math.random() * this.primitiveTypes.length)];
+    
+    // Generate position along predicted path with some randomness
+    const pathIndex = Math.floor(Math.random() * Math.min(pathPoints.length, 5)); // Use first 5 path points
+    const basePosition = pathPoints[pathIndex] || ballPosition;
+    
     const spawnPosition = new THREE.Vector3(
-      ballPosition.x + (Math.random() - 0.5) * 20,
-      ballPosition.y - Math.random() * 30 - 10,
-      ballPosition.z + (Math.random() - 0.5) * 20
+      basePosition.x + (Math.random() - 0.5) * 12, // Reduced spread
+      basePosition.y - Math.random() * 15 - 5, // Closer to predicted path
+      basePosition.z + (Math.random() - 0.5) * 12  // Reduced spread
     );
 
+    // Only spawn if position is near predicted path
+    if (!this.isPositionNearPath(spawnPosition, pathPoints)) {
+      return;
+    }
+
+    // Check spacing with existing primitives
     const tooClose = this.primitives.some(primitive => 
       primitive.position.distanceTo(spawnPosition) < SIMULATION_CONSTANTS.MIN_SPACING
     );
@@ -108,10 +164,13 @@ export class PrimitiveManager {
   }
 
   private cleanupPrimitives(ballPosition: THREE.Vector3): void {
+    // Reduced cleanup radius for more focused primitive field
+    const cleanupRadius = 80;
+    
     this.primitives = this.primitives.filter(primitive => {
       const distance = primitive.position.distanceTo(ballPosition);
       
-      if (distance > SIMULATION_CONSTANTS.CLEANUP_RADIUS || primitive.shouldRemove) {
+      if (distance > cleanupRadius || primitive.shouldRemove) {
         this.returnToPool(primitive);
         return false;
       }

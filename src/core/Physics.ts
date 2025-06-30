@@ -92,54 +92,65 @@ export class PhysicsEngine {
     // Don't resolve if objects are separating
     if (velocityAlongNormal > 0) return;
 
-    // Calculate restitution (energy conservation)
-    const restitution = Math.min(object.restitution, collision.object.restitution) * 
-                       PHYSICS_CONSTANTS.ENERGY_CONSERVATION_FACTOR;
+    // Increased restitution for more bouncy collisions
+    const baseRestitution = Math.min(object.restitution, collision.object.restitution);
+    const bouncyRestitution = Math.min(baseRestitution * 1.4, 1.2); // Increase bounce by 40%
 
     // Calculate impulse scalar using proper physics formula
-    const impulseScalar = -(1 + restitution) * velocityAlongNormal;
+    const impulseScalar = -(1 + bouncyRestitution) * velocityAlongNormal;
     
     // Apply mass considerations (assuming collision object has infinite mass)
     const massRatio = 1; // For static objects
     const finalImpulse = impulseScalar * massRatio;
 
-    // Create impulse force
+    // Create stronger impulse force for more bounce
     const impulseForce: ForceVector = {
-      force: collision.normal.clone().multiplyScalar(finalImpulse * object.mass),
+      force: collision.normal.clone().multiplyScalar(finalImpulse * object.mass * 1.2), // 20% stronger
       duration: 0,
       type: 'impulse'
     };
 
     this.addForce(objectId, impulseForce);
 
-    // Add tangential friction force for realistic surface interaction
+    // Add extra bounce energy to maintain exciting motion
+    const extraBounceForce: ForceVector = {
+      force: collision.normal.clone().multiplyScalar(2 * object.mass),
+      duration: 0,
+      type: 'impulse'
+    };
+    this.addForce(objectId, extraBounceForce);
+
+    // Add tangential friction force for realistic surface interaction (reduced for more bounce)
     const tangentialVelocity = relativeVelocity.clone().sub(
       collision.normal.clone().multiplyScalar(velocityAlongNormal)
     );
 
     if (tangentialVelocity.length() > 0) {
       const frictionForce: ForceVector = {
-        force: tangentialVelocity.normalize().multiplyScalar(-0.1 * object.mass),
-        duration: 0.1,
+        force: tangentialVelocity.normalize().multiplyScalar(-0.05 * object.mass), // Reduced friction
+        duration: 0.05, // Shorter duration
         type: 'continuous'
       };
       this.addForce(objectId, frictionForce);
     }
 
-    // Apply rolling friction for surfaces
+    // Reduced rolling friction for more bounce
     if (Math.abs(collision.normal.y) > 0.7) { // Horizontal surface
-      object.velocity.multiplyScalar(PHYSICS_CONSTANTS.ROLLING_FRICTION);
+      object.velocity.multiplyScalar(0.98); // Less energy loss
     }
 
-    // Ensure collision doesn't completely stop the ball
-    if (object.velocity.length() < PHYSICS_CONSTANTS.MIN_VELOCITY) {
-      const randomDirection = new THREE.Vector3(
-        (Math.random() - 0.5) * 2,
-        Math.random(),
-        (Math.random() - 0.5) * 2
-      ).normalize();
+    // Ensure collision adds energy instead of removing it
+    if (object.velocity.length() < PHYSICS_CONSTANTS.MIN_VELOCITY * 2) {
+      const boostDirection = collision.normal.clone();
+      // Add some randomness to prevent predictable bouncing
+      boostDirection.add(new THREE.Vector3(
+        (Math.random() - 0.5) * 0.3,
+        Math.random() * 0.2,
+        (Math.random() - 0.5) * 0.3
+      ));
+      boostDirection.normalize();
       
-      object.velocity.copy(randomDirection.multiplyScalar(PHYSICS_CONSTANTS.MIN_VELOCITY));
+      object.velocity.copy(boostDirection.multiplyScalar(PHYSICS_CONSTANTS.MIN_VELOCITY * 2));
     }
   }
 
