@@ -180,7 +180,7 @@ export class Ball implements PhysicsObject {
   }
 
   private addCollisionEffect(collision: Collision): void {
-    // Enhanced collision visual effect
+    // Enhanced collision visual effect - only affects material properties, not scale
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const originalEmissive = material.emissive.clone();
     const originalIntensity = material.emissiveIntensity;
@@ -194,12 +194,8 @@ export class Ball implements PhysicsObject {
       material.emissiveIntensity = originalIntensity;
     }, 100);
 
-    // Enhanced scale effect
-    const originalScale = this.mesh.scale.clone();
-    this.mesh.scale.multiplyScalar(1.15);
-    setTimeout(() => {
-      this.mesh.scale.copy(originalScale);
-    }, 120);
+    // REMOVED: Scale effect that was causing the ball to grow
+    // The ball now maintains its original size throughout the simulation
   }
 
   private reset(): void {
@@ -214,6 +210,9 @@ export class Ball implements PhysicsObject {
       Math.random() * 3,
       (Math.random() - 0.5) * 5
     );
+    
+    // Ensure ball scale is always reset to original size
+    this.mesh.scale.set(1, 1, 1);
     
     this.trailPositions = [];
     this.energyHistory = [];
