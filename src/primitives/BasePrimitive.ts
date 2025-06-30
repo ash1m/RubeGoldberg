@@ -22,7 +22,7 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.position = position.clone();
     this.originalPosition = position.clone();
 
-    // Create brighter material with emissive glow
+    // Create brighter material with emissive glow and doubled line width
     const material = new THREE.MeshPhongMaterial({
       color: color,
       wireframe: true,
@@ -33,6 +33,9 @@ export abstract class BasePrimitive implements PhysicsObject {
       shininess: 100,
       specular: new THREE.Color(color).multiplyScalar(0.8)
     });
+
+    // Set wireframe line width to double the default
+    material.wireframeLinewidth = 2;
 
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.copy(this.position);
@@ -111,6 +114,8 @@ export abstract class BasePrimitive implements PhysicsObject {
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     material.opacity = 0.9;
     material.emissiveIntensity = 0.5;
+    // Ensure line width remains doubled after reset
+    material.wireframeLinewidth = 2;
 
     if (this.boundingBox && this.mesh.geometry.boundingBox) {
       this.boundingBox = this.mesh.geometry.boundingBox.clone();
