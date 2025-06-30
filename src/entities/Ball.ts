@@ -71,8 +71,23 @@ export class Ball implements PhysicsObject {
     scene.add(this.trail);
   }
 
-  update(deltaTime: number): void {
-    // Update mesh position
+  // PHYSICS UPDATE - Called with scaled time for slow motion
+  updatePhysics(deltaTime: number): void {
+    // Update energy history for analysis
+    this.updateEnergyHistory();
+
+    // Reset if ball falls too far (with better positioning)
+    if (this.position.y < -300) {
+      this.reset();
+    }
+
+    // Prevent ball from getting stuck in low-energy states
+    this.preventStagnation();
+  }
+
+  // VISUAL UPDATE - Always called with real-time delta for smooth visuals
+  updateVisuals(realDeltaTime: number): void {
+    // Update mesh position to match physics position
     this.mesh.position.copy(this.position);
     
     // Check if ball has started moving significantly from its starting position
@@ -83,20 +98,17 @@ export class Ball implements PhysicsObject {
       }
     }
     
-    // Add rotation based on velocity for visual feedback
+    // Add rotation based on velocity for visual feedback (always smooth)
     const rotationSpeed = this.velocity.length() * 0.1;
-    this.mesh.rotation.x += rotationSpeed * deltaTime;
-    this.mesh.rotation.z += rotationSpeed * deltaTime * 0.7;
+    this.mesh.rotation.x += rotationSpeed * realDeltaTime;
+    this.mesh.rotation.z += rotationSpeed * realDeltaTime * 0.7;
 
-    // Update trail only after ball has started moving
+    // Update trail only after ball has started moving (always smooth)
     if (this.hasStartedMoving) {
       this.updateTrail();
     }
 
-    // Update energy history for analysis
-    this.updateEnergyHistory();
-
-    // Enhanced glow effect based on velocity
+    // Enhanced glow effect based on velocity (always smooth)
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
     
@@ -106,14 +118,12 @@ export class Ball implements PhysicsObject {
     const lightness = 0.3 + velocityFactor * 0.4;
     material.emissive.setHSL(hue, saturation, lightness);
     material.emissiveIntensity = 0.4 + velocityFactor * 0.6;
+  }
 
-    // Reset if ball falls too far (with better positioning)
-    if (this.position.y < -300) {
-      this.reset();
-    }
-
-    // Prevent ball from getting stuck in low-energy states
-    this.preventStagnation();
+  // Legacy update method for backward compatibility - now calls both physics and visuals
+  update(deltaTime: number): void {
+    this.updatePhysics(deltaTime);
+    this.updateVisuals(deltaTime);
   }
 
   private updateTrail(): void {

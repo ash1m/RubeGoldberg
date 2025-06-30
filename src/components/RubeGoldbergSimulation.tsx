@@ -46,26 +46,26 @@ const RubeGoldbergSimulation: React.FC = () => {
     let accumulatedTime = 0;
     const fixedTimeStep = 1 / 60; // 60 FPS physics
 
-    // Animation loop with fixed timestep physics and time scaling
+    // Animation loop with separated physics and visual updates
     const animate = () => {
       const currentTime = performance.now();
-      let deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta time
+      const realDeltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Real-time delta for visuals
       lastTime = currentTime;
       
-      // Apply time scale to delta time for slow motion effect
-      deltaTime *= timeScale;
-      accumulatedTime += deltaTime;
+      // Apply time scale only to physics delta time
+      const physicsDeltaTime = realDeltaTime * timeScale;
+      accumulatedTime += physicsDeltaTime;
 
-      // Fixed timestep physics updates with time scaling
+      // PHYSICS UPDATES - Run at scaled time for slow motion
       while (accumulatedTime >= fixedTimeStep) {
         // Apply forces and integrate physics with scaled time
         physicsEngine.integrateForces(ball, ball.id, fixedTimeStep);
         
-        // Update ball position
+        // Update ball physics (position, velocity, stagnation prevention)
         physicsEngine.updatePosition(ball, fixedTimeStep);
 
-        // Update primitives
-        primitiveManager.update(ball.position, fixedTimeStep);
+        // Update primitive physics (generation, cleanup, physics-related updates)
+        primitiveManager.updatePhysics(ball.position, fixedTimeStep);
 
         // Check collisions
         const collisions = primitiveManager.checkCollisions(ball);
@@ -87,14 +87,17 @@ const RubeGoldbergSimulation: React.FC = () => {
         accumulatedTime -= fixedTimeStep;
       }
 
-      // Update visual components with interpolation and time scaling
-      const alpha = accumulatedTime / fixedTimeStep;
-      ball.update(deltaTime);
+      // VISUAL UPDATES - Always run at full 60 FPS for smooth visuals
+      // Update ball visuals (mesh position, rotation, trail, glow)
+      ball.updateVisuals(realDeltaTime);
 
-      // Update space particles with parallax effect (use original deltaTime for smooth visuals)
-      spaceParticles.update((currentTime - lastTime) / 1000);
+      // Update primitive visuals (animations, glow effects)
+      primitiveManager.updateVisuals(realDeltaTime);
 
-      // Update camera
+      // Update space particles with parallax effect (always smooth)
+      spaceParticles.update(realDeltaTime);
+
+      // Update camera (always smooth)
       sceneManager.updateCamera(ball.position);
 
       // Update metrics every 10 frames
@@ -112,10 +115,10 @@ const RubeGoldbergSimulation: React.FC = () => {
         setMetrics(updatedMetrics);
       }
 
-      // Performance monitoring (use original deltaTime)
-      performanceManager.update((currentTime - lastTime) / 1000);
+      // Performance monitoring (use real deltaTime for accurate FPS)
+      performanceManager.update(realDeltaTime);
 
-      // Render
+      // Render (always at full frame rate)
       sceneManager.render();
       requestAnimationFrame(animate);
     };

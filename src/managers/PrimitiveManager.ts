@@ -98,7 +98,8 @@ export class PrimitiveManager {
     );
   }
 
-  update(ballPosition: THREE.Vector3, deltaTime: number): void {
+  // PHYSICS UPDATE - Called with scaled time for slow motion
+  updatePhysics(ballPosition: THREE.Vector3, deltaTime: number): void {
     // Track ball velocity history for better path prediction
     this.ballVelocityHistory.push(ballPosition.clone());
     if (this.ballVelocityHistory.length > 5) {
@@ -106,8 +107,20 @@ export class PrimitiveManager {
     }
 
     this.generatePrimitives(ballPosition);
-    this.updatePrimitives(deltaTime);
     this.cleanupPrimitives(ballPosition);
+  }
+
+  // VISUAL UPDATE - Always called with real-time delta for smooth visuals
+  updateVisuals(realDeltaTime: number): void {
+    this.primitives.forEach(primitive => {
+      primitive.updateVisuals(realDeltaTime);
+    });
+  }
+
+  // Legacy update method for backward compatibility - now calls both physics and visuals
+  update(ballPosition: THREE.Vector3, deltaTime: number): void {
+    this.updatePhysics(ballPosition, deltaTime);
+    this.updateVisuals(deltaTime);
   }
 
   private generatePrimitives(ballPosition: THREE.Vector3): void {
@@ -155,12 +168,6 @@ export class PrimitiveManager {
       this.primitives.push(primitive);
       this.lastSpawnPosition.copy(spawnPosition);
     }
-  }
-
-  private updatePrimitives(deltaTime: number): void {
-    this.primitives.forEach(primitive => {
-      primitive.update(deltaTime);
-    });
   }
 
   private cleanupPrimitives(ballPosition: THREE.Vector3): void {

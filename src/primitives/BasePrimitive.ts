@@ -54,15 +54,16 @@ export abstract class BasePrimitive implements PhysicsObject {
   abstract checkCollision(ball: PhysicsObject): Collision | null;
   abstract animate(deltaTime: number): void;
 
-  update(deltaTime: number): void {
-    // Enhanced pulsing glow effect with higher intensity
+  // VISUAL UPDATE - Always called with real-time delta for smooth visuals
+  updateVisuals(realDeltaTime: number): void {
+    // Enhanced pulsing glow effect with higher intensity (always smooth)
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const pulseIntensity = 0.6 + Math.sin(performance.now() * 0.004) * 0.4; // Stronger pulse
     material.emissiveIntensity = pulseIntensity;
 
     if (this.isAnimating) {
-      this.animationTime += deltaTime;
-      this.animate(deltaTime);
+      this.animationTime += realDeltaTime; // Use real-time delta for smooth animations
+      this.animate(realDeltaTime); // Pass real-time delta to animation
 
       // Much brighter glow during animation
       material.emissiveIntensity = pulseIntensity + 0.8; // Much higher boost
@@ -74,6 +75,11 @@ export abstract class BasePrimitive implements PhysicsObject {
         this.fadeOut();
       }
     }
+  }
+
+  // Legacy update method for backward compatibility - now calls visual update
+  update(deltaTime: number): void {
+    this.updateVisuals(deltaTime);
   }
 
   onCollision(): void {
