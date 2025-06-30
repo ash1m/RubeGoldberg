@@ -97,5 +97,3 @@ export abstract class BasePrimitive implements PhysicsObject {
     }
   }
 }
-
-export { BasePrimitive }
