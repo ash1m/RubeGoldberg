@@ -9,14 +9,39 @@ export class BoxPrimitive extends BasePrimitive {
     const geometry = new THREE.BoxGeometry(4, 1, 4);
     super('box', geometry, position, config.color);
     this.restitution = config.restitution;
+    
+    // Always spawn boxes at random angles - never flat
+    this.setRandomAngles();
     this.updateBoundingBox();
   }
 
+  private setRandomAngles(): void {
+    // Generate random rotations for all axes to ensure boxes are never flat
+    const minAngle = Math.PI / 8; // 22.5 degrees minimum
+    const maxAngle = Math.PI / 3; // 60 degrees maximum
+    
+    // X rotation (pitch) - ensures box isn't lying flat horizontally
+    const xRotation = (Math.random() - 0.5) * 2 * (maxAngle - minAngle) + 
+                     (Math.random() > 0.5 ? minAngle : -minAngle);
+    
+    // Y rotation (yaw) - random orientation
+    const yRotation = Math.random() * Math.PI * 2;
+    
+    // Z rotation (roll) - adds more dynamic positioning
+    const zRotation = (Math.random() - 0.5) * 2 * (maxAngle - minAngle) + 
+                     (Math.random() > 0.5 ? minAngle : -minAngle);
+    
+    this.mesh.rotation.set(xRotation, yRotation, zRotation);
+  }
+
   private updateBoundingBox(): void {
+    // Update bounding box to account for rotation
     this.mesh.geometry.computeBoundingBox();
     if (this.mesh.geometry.boundingBox) {
-      this.boundingBox = this.mesh.geometry.boundingBox.clone();
-      this.boundingBox.translate(this.position);
+      // Create a new bounding box that encompasses the rotated geometry
+      const box = new THREE.Box3();
+      box.setFromObject(this.mesh);
+      this.boundingBox = box;
     }
   }
 
@@ -46,9 +71,23 @@ export class BoxPrimitive extends BasePrimitive {
   }
 
   animate(deltaTime: number): void {
-    const maxRotation = Math.PI / 4;
+    // Enhanced animation that works with the angled positioning
+    const maxRotation = Math.PI / 6; // 30 degrees additional rotation
     const rotationAmount = Math.sin(this.animationTime * 3) * maxRotation;
-    this.mesh.rotation.z = rotationAmount;
+    
+    // Add to existing rotation instead of replacing it
+    this.mesh.rotation.z += rotationAmount * deltaTime;
+    this.mesh.rotation.x += rotationAmount * deltaTime * 0.5;
+    
+    this.updateBoundingBox();
+  }
+
+  reset(position: THREE.Vector3): void {
+    // Call parent reset first
+    super.reset(position);
+    
+    // Always set new random angles when resetting
+    this.setRandomAngles();
     this.updateBoundingBox();
   }
 }
