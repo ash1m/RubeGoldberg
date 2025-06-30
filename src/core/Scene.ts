@@ -27,6 +27,14 @@ export class SceneManager {
       0.1,
       1000
     );
+    
+    // Set camera to start at the correct follow position (ball starts at 0, 80, 0)
+    // Camera offset is (0, 10, 20), so camera should start at (0, 90, 20)
+    camera.position.set(0, 90, 20);
+    
+    // Point camera at ball's starting position
+    camera.lookAt(0, 80, 0);
+    
     return camera;
   }
 
