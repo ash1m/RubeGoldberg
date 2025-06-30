@@ -7,7 +7,6 @@ import { BoxPrimitive } from '../primitives/BoxPrimitive';
 import { CylinderPrimitive } from '../primitives/CylinderPrimitive';
 import { ConePrimitive } from '../primitives/ConePrimitive';
 import { TorusPrimitive } from '../primitives/TorusPrimitive';
-import { PlanePrimitive } from '../primitives/PlanePrimitive';
 import { DodecahedronPrimitive } from '../primitives/DodecahedronPrimitive';
 import { SIMULATION_CONSTANTS } from '../constants/physics';
 import { Ball } from '../entities/Ball';
@@ -20,8 +19,9 @@ export class PrimitiveManager {
   private lastSpawnPosition = new THREE.Vector3();
   private ballVelocityHistory: THREE.Vector3[] = [];
 
+  // Removed 'plane' from the primitive types array
   private readonly primitiveTypes: PrimitiveType[] = [
-    'sphere', 'box', 'cylinder', 'cone', 'torus', 'plane', 'dodecahedron'
+    'sphere', 'box', 'cylinder', 'cone', 'torus', 'dodecahedron'
   ];
 
   constructor(scene: THREE.Scene, physicsEngine: PhysicsEngine) {
@@ -37,13 +37,13 @@ export class PrimitiveManager {
   }
 
   private createPrimitive(type: PrimitiveType, position: THREE.Vector3): BasePrimitive {
+    // Removed plane from the primitive creation map
     const primitiveMap = {
       sphere: () => new SpherePrimitive(position),
       box: () => new BoxPrimitive(position),
       cylinder: () => new CylinderPrimitive(position),
       cone: () => new ConePrimitive(position),
       torus: () => new TorusPrimitive(position),
-      plane: () => new PlanePrimitive(position),
       dodecahedron: () => new DodecahedronPrimitive(position)
     };
 

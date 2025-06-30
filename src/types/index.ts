@@ -35,7 +35,8 @@ export interface SimulationMetrics {
   totalEnergy: number;
 }
 
-export type PrimitiveType = 'sphere' | 'box' | 'cylinder' | 'cone' | 'torus' | 'plane' | 'dodecahedron';
+// Removed 'plane' from the PrimitiveType union
+export type PrimitiveType = 'sphere' | 'box' | 'cylinder' | 'cone' | 'torus' | 'dodecahedron';
 
 export interface PrimitiveConfig {
   type: PrimitiveType;

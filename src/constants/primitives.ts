@@ -1,5 +1,6 @@
 import { PrimitiveConfig } from '../types';
 
+// Removed plane configuration from PRIMITIVE_CONFIGS
 export const PRIMITIVE_CONFIGS: Record<string, PrimitiveConfig> = {
   sphere: {
     type: 'sphere',
@@ -29,11 +30,6 @@ export const PRIMITIVE_CONFIGS: Record<string, PrimitiveConfig> = {
     color: 0xff44ff,
     radius: 4,
     restitution: 0.6
-  },
-  plane: {
-    type: 'plane',
-    color: 0x44ffff,
-    restitution: 0.8
   },
   dodecahedron: {
     type: 'dodecahedron',
