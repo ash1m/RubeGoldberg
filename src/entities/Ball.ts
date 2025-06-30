@@ -16,9 +16,12 @@ export class Ball implements PhysicsObject {
   private lastCollisionTime = 0;
   private energyHistory: number[] = [];
   private lastStagnationCheck = 0;
+  private hasStartedMoving = false;
+  private startingPosition: THREE.Vector3;
 
   constructor(scene: THREE.Scene) {
     this.position = new THREE.Vector3(0, 80, 0);
+    this.startingPosition = this.position.clone();
     this.velocity = new THREE.Vector3(
       (Math.random() - 0.5) * 3,
       0,
@@ -72,13 +75,23 @@ export class Ball implements PhysicsObject {
     // Update mesh position
     this.mesh.position.copy(this.position);
     
+    // Check if ball has started moving significantly from its starting position
+    if (!this.hasStartedMoving) {
+      const distanceFromStart = this.position.distanceTo(this.startingPosition);
+      if (distanceFromStart > 2.0) { // Only start trail after moving 2 units
+        this.hasStartedMoving = true;
+      }
+    }
+    
     // Add rotation based on velocity for visual feedback
     const rotationSpeed = this.velocity.length() * 0.1;
     this.mesh.rotation.x += rotationSpeed * deltaTime;
     this.mesh.rotation.z += rotationSpeed * deltaTime * 0.7;
 
-    // Update trail
-    this.updateTrail();
+    // Update trail only after ball has started moving
+    if (this.hasStartedMoving) {
+      this.updateTrail();
+    }
 
     // Update energy history for analysis
     this.updateEnergyHistory();
@@ -118,19 +131,31 @@ export class Ball implements PhysicsObject {
     const colors = new Float32Array(SIMULATION_CONSTANTS.MAX_TRAIL_LENGTH * 3);
 
     for (let i = 0; i < SIMULATION_CONSTANTS.MAX_TRAIL_LENGTH; i++) {
-      const pos = this.trailPositions[i] || this.position;
-      positions[i * 3] = pos.x;
-      positions[i * 3 + 1] = pos.y;
-      positions[i * 3 + 2] = pos.z;
+      if (i < this.trailPositions.length) {
+        const pos = this.trailPositions[i];
+        positions[i * 3] = pos.x;
+        positions[i * 3 + 1] = pos.y;
+        positions[i * 3 + 2] = pos.z;
 
-      // Brighter velocity-based color gradient
-      const alpha = i / SIMULATION_CONSTANTS.MAX_TRAIL_LENGTH;
-      const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
-      
-      // Enhanced trail colors
-      colors[i * 3] = alpha * velocityFactor * 1.5; // R - brighter
-      colors[i * 3 + 1] = alpha * 1.2; // G - brighter
-      colors[i * 3 + 2] = 1.5; // B - much brighter
+        // Brighter velocity-based color gradient
+        const alpha = i / this.trailPositions.length;
+        const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
+        
+        // Enhanced trail colors
+        colors[i * 3] = alpha * velocityFactor * 1.5; // R - brighter
+        colors[i * 3 + 1] = alpha * 1.2; // G - brighter
+        colors[i * 3 + 2] = 1.5; // B - much brighter
+      } else {
+        // Set unused positions to current ball position (invisible)
+        positions[i * 3] = this.position.x;
+        positions[i * 3 + 1] = this.position.y;
+        positions[i * 3 + 2] = this.position.z;
+        
+        // Make unused trail points transparent
+        colors[i * 3] = 0;
+        colors[i * 3 + 1] = 0;
+        colors[i * 3 + 2] = 0;
+      }
     }
 
     this.trail.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -193,9 +218,6 @@ export class Ball implements PhysicsObject {
       material.emissive.copy(originalEmissive);
       material.emissiveIntensity = originalIntensity;
     }, 100);
-
-    // REMOVED: Scale effect that was causing the ball to grow
-    // The ball now maintains its original size throughout the simulation
   }
 
   private reset(): void {
@@ -204,6 +226,10 @@ export class Ball implements PhysicsObject {
       80 + Math.random() * 40,
       (Math.random() - 0.5) * 30
     );
+    
+    // Update starting position for new trail tracking
+    this.startingPosition.copy(this.position);
+    this.hasStartedMoving = false;
     
     this.velocity.set(
       (Math.random() - 0.5) * 5,
@@ -214,6 +240,7 @@ export class Ball implements PhysicsObject {
     // Ensure ball scale is always reset to original size
     this.mesh.scale.set(1, 1, 1);
     
+    // Clear trail completely on reset
     this.trailPositions = [];
     this.energyHistory = [];
     this.lastCollisionTime = performance.now();
