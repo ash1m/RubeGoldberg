@@ -18,7 +18,7 @@ export const UI: React.FC<UIProps> = ({ metrics }) => {
   const energyPercentage = Math.min((metrics.totalEnergy / 100) * 100, 100);
   
   return (
-    <div className="absolute top-4 left-4 z-10 space-y-4">
+    <div className="absolute top-4 left-4 z-10 space-y-4 font-monda">
       {/* Main Metrics Panel */}
       <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-cyan-500 rounded-lg p-4 text-white min-w-64">
         <h2 className="text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">
@@ -110,7 +110,7 @@ export const UI: React.FC<UIProps> = ({ metrics }) => {
 
       {/* Physics Info */}
       <div className="bg-black bg-opacity-70 backdrop-blur-sm border border-gray-600 rounded-lg p-3 text-white max-w-64">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 leading-relaxed">
           <strong className="text-cyan-400">Physics-Based Motion:</strong> The ball experiences continuous gravitational force, 
           realistic collision responses with momentum conservation, and energy-based interactions. 
           Motion persists indefinitely through force accumulation and anti-stagnation systems.
