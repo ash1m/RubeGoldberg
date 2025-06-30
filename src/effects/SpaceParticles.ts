@@ -13,12 +13,12 @@ export class SpaceParticles {
   }
 
   private createParticleLayers(): void {
-    // Create multiple layers for parallax effect
+    // Create multiple layers for parallax effect with much brighter colors
     const layers = [
-      { count: 2000, size: 0.5, distance: 800, speed: 0.1, color: 0x4488ff },
-      { count: 1500, size: 1.0, distance: 600, speed: 0.2, color: 0x88aaff },
-      { count: 1000, size: 1.5, distance: 400, speed: 0.3, color: 0xaaccff },
-      { count: 500, size: 2.0, distance: 200, speed: 0.5, color: 0xffffff }
+      { count: 2500, size: 0.8, distance: 800, speed: 0.1, color: 0x88bbff }, // Brighter blue
+      { count: 2000, size: 1.2, distance: 600, speed: 0.2, color: 0xaaccff }, // Brighter light blue
+      { count: 1500, size: 1.8, distance: 400, speed: 0.3, color: 0xccddff }, // Much brighter
+      { count: 800, size: 2.5, distance: 200, speed: 0.5, color: 0xffffff }   // Bright white
     ];
 
     layers.forEach((layer, index) => {
@@ -37,8 +37,8 @@ export class SpaceParticles {
         positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
         positions[i * 3 + 2] = radius * Math.cos(phi);
 
-        // Vary particle brightness
-        const brightness = 0.3 + Math.random() * 0.7;
+        // Much brighter particles with higher minimum brightness
+        const brightness = 0.7 + Math.random() * 0.8; // Increased from 0.3-1.0 to 0.7-1.5
         const color = new THREE.Color(layer.color);
         color.multiplyScalar(brightness);
 
@@ -46,8 +46,8 @@ export class SpaceParticles {
         colors[i * 3 + 1] = color.g;
         colors[i * 3 + 2] = color.b;
 
-        // Vary particle sizes
-        sizes[i] = layer.size * (0.5 + Math.random() * 0.5);
+        // Larger particle sizes
+        sizes[i] = layer.size * (0.8 + Math.random() * 0.7); // Increased size multiplier
       }
 
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -69,12 +69,12 @@ export class SpaceParticles {
           void main() {
             vColor = color;
             
-            // Add subtle twinkling effect
-            float twinkle = sin(time * 2.0 + position.x * 0.01 + position.y * 0.01) * 0.5 + 0.5;
-            vAlpha = 0.6 + twinkle * 0.4;
+            // Enhanced twinkling effect with brighter base
+            float twinkle = sin(time * 3.0 + position.x * 0.01 + position.y * 0.01) * 0.3 + 0.7;
+            vAlpha = 0.8 + twinkle * 0.6; // Much brighter base alpha
             
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            gl_PointSize = size * (300.0 / -mvPosition.z);
+            gl_PointSize = size * (350.0 / -mvPosition.z); // Larger point size
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -83,14 +83,19 @@ export class SpaceParticles {
           varying float vAlpha;
 
           void main() {
-            // Create circular particles with soft edges
+            // Create circular particles with soft edges and brighter core
             float distance = length(gl_PointCoord - vec2(0.5));
             if (distance > 0.5) discard;
             
+            // Enhanced brightness with brighter core
             float alpha = 1.0 - smoothstep(0.0, 0.5, distance);
+            alpha = pow(alpha, 0.6); // Brighter falloff
             alpha *= vAlpha;
             
-            gl_FragColor = vec4(vColor, alpha);
+            // Boost overall brightness
+            vec3 finalColor = vColor * 1.4; // 40% brighter
+            
+            gl_FragColor = vec4(finalColor, alpha);
           }
         `,
         transparent: true,
@@ -147,10 +152,10 @@ export class SpaceParticles {
 
     const maxDistance = 1000;
     const layers = [
-      { distance: 800, size: 0.5, color: 0x4488ff },
-      { distance: 600, size: 1.0, color: 0x88aaff },
-      { distance: 400, size: 1.5, color: 0xaaccff },
-      { distance: 200, size: 2.0, color: 0xffffff }
+      { distance: 800, size: 0.8, color: 0x88bbff },
+      { distance: 600, size: 1.2, color: 0xaaccff },
+      { distance: 400, size: 1.8, color: 0xccddff },
+      { distance: 200, size: 2.5, color: 0xffffff }
     ];
 
     for (let i = 0; i < positions.length; i += 3) {
@@ -181,8 +186,8 @@ export class SpaceParticles {
         originalPositions[i + 1] = newPos.y;
         originalPositions[i + 2] = newPos.z;
 
-        // Randomize color and size for variety
-        const brightness = 0.3 + Math.random() * 0.7;
+        // Much brighter randomized color and size
+        const brightness = 0.7 + Math.random() * 0.8; // Brighter range
         const color = new THREE.Color(layer.color);
         color.multiplyScalar(brightness);
 
@@ -190,7 +195,7 @@ export class SpaceParticles {
         colors[i / 3 * 3 + 1] = color.g;
         colors[i / 3 * 3 + 2] = color.b;
 
-        sizes[i / 3] = layer.size * (0.5 + Math.random() * 0.5);
+        sizes[i / 3] = layer.size * (0.8 + Math.random() * 0.7); // Larger sizes
       }
     }
 

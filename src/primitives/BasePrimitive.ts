@@ -22,20 +22,20 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.position = position.clone();
     this.originalPosition = position.clone();
 
-    // Create brighter material with emissive glow and doubled line width
+    // Create much brighter material with enhanced emissive glow and thicker wireframe
     const material = new THREE.MeshPhongMaterial({
       color: color,
       wireframe: true,
       transparent: true,
-      opacity: 0.9,
-      emissive: new THREE.Color(color).multiplyScalar(0.3), // Add emissive glow
-      emissiveIntensity: 0.5,
-      shininess: 100,
-      specular: new THREE.Color(color).multiplyScalar(0.8)
+      opacity: 1.0, // Increased opacity
+      emissive: new THREE.Color(color).multiplyScalar(0.6), // Much stronger emissive glow
+      emissiveIntensity: 0.8, // Higher intensity
+      shininess: 150,
+      specular: new THREE.Color(color).multiplyScalar(1.2)
     });
 
-    // Set wireframe line width to double the default
-    material.wireframeLinewidth = 2;
+    // Set wireframe line width to 4x the default for much thicker edges
+    material.wireframeLinewidth = 4;
 
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.copy(this.position);
@@ -55,18 +55,18 @@ export abstract class BasePrimitive implements PhysicsObject {
   abstract animate(deltaTime: number): void;
 
   update(deltaTime: number): void {
-    // Add subtle pulsing glow effect
+    // Enhanced pulsing glow effect with higher intensity
     const material = this.mesh.material as THREE.MeshPhongMaterial;
-    const pulseIntensity = 0.3 + Math.sin(performance.now() * 0.003) * 0.2;
+    const pulseIntensity = 0.6 + Math.sin(performance.now() * 0.004) * 0.4; // Stronger pulse
     material.emissiveIntensity = pulseIntensity;
 
     if (this.isAnimating) {
       this.animationTime += deltaTime;
       this.animate(deltaTime);
 
-      // Increase glow during animation
-      material.emissiveIntensity = pulseIntensity + 0.4;
-      material.opacity = 0.95;
+      // Much brighter glow during animation
+      material.emissiveIntensity = pulseIntensity + 0.8; // Much higher boost
+      material.opacity = 1.0;
 
       if (this.animationTime >= SIMULATION_CONSTANTS.ANIMATION_DURATION) {
         this.isAnimating = false;
@@ -80,20 +80,20 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.isAnimating = true;
     this.animationTime = 0;
     
-    // Flash effect on collision
+    // Intense flash effect on collision
     const material = this.mesh.material as THREE.MeshPhongMaterial;
-    material.emissiveIntensity = 1.0;
+    material.emissiveIntensity = 2.0; // Very bright flash
     material.opacity = 1.0;
   }
 
   private fadeOut(): void {
     const material = this.mesh.material as THREE.MeshPhongMaterial;
-    const fadeStep = 0.05;
-    const fadeInterval = SIMULATION_CONSTANTS.FADE_DURATION * 50;
+    const fadeStep = 0.04; // Slower fade for more visibility
+    const fadeInterval = SIMULATION_CONSTANTS.FADE_DURATION * 40;
     
     const fade = setInterval(() => {
       material.opacity -= fadeStep;
-      material.emissiveIntensity -= fadeStep * 0.5;
+      material.emissiveIntensity -= fadeStep * 0.4;
       if (material.opacity <= 0) {
         clearInterval(fade);
         this.shouldRemove = true;
@@ -112,10 +112,10 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.shouldRemove = false;
     
     const material = this.mesh.material as THREE.MeshPhongMaterial;
-    material.opacity = 0.9;
-    material.emissiveIntensity = 0.5;
-    // Ensure line width remains doubled after reset
-    material.wireframeLinewidth = 2;
+    material.opacity = 1.0;
+    material.emissiveIntensity = 0.8;
+    // Ensure line width remains 4x after reset
+    material.wireframeLinewidth = 4;
 
     if (this.boundingBox && this.mesh.geometry.boundingBox) {
       this.boundingBox = this.mesh.geometry.boundingBox.clone();
