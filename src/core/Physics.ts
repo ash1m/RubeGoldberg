@@ -81,8 +81,8 @@ export class PhysicsEngine {
   }
 
   resolveCollision(object: PhysicsObject, collision: Collision, objectId: string): void {
-    // Separate objects first
-    const separation = collision.normal.clone().multiplyScalar(collision.penetration * 1.01);
+    // Separate objects precisely without overshooting
+    const separation = collision.normal.clone().multiplyScalar(collision.penetration);
     object.position.add(separation);
 
     // Calculate relative velocity

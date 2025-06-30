@@ -15,13 +15,14 @@ export class Ball implements PhysicsObject {
   private trailPositions: THREE.Vector3[] = [];
   private lastCollisionTime = 0;
   private energyHistory: number[] = [];
+  private lastStagnationCheck = 0;
 
   constructor(scene: THREE.Scene) {
-    this.position = new THREE.Vector3(0, 50, 0);
+    this.position = new THREE.Vector3(0, 80, 0); // Higher starting position
     this.velocity = new THREE.Vector3(
-      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 3,
       0,
-      (Math.random() - 0.5) * 2
+      (Math.random() - 0.5) * 3
     );
 
     this.createMesh(scene);
@@ -83,10 +84,10 @@ export class Ball implements PhysicsObject {
     // Apply subtle glow effect based on velocity
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
-    material.emissive.setHSL(0.5, 0.8, velocityFactor * 0.3);
+    material.emissive.setHSL(0.5, 0.8, velocityFactor * 0.2); // Reduced glow intensity
 
-    // Reset if ball falls too far (with some velocity to keep it moving)
-    if (this.position.y < -200) {
+    // Reset if ball falls too far (with better positioning)
+    if (this.position.y < -300) { // Deeper threshold before reset
       this.reset();
     }
 
@@ -141,14 +142,18 @@ export class Ball implements PhysicsObject {
   private preventStagnation(): void {
     const currentTime = performance.now();
     
+    // Check less frequently and with higher threshold
+    if (currentTime - this.lastStagnationCheck < 8000) return; // Check every 8 seconds
+    this.lastStagnationCheck = currentTime;
+    
     // Check if ball has been moving too slowly for too long
-    if (this.velocity.length() < PHYSICS_CONSTANTS.MIN_VELOCITY * 2) {
-      if (currentTime - this.lastCollisionTime > 5000) { // 5 seconds
-        // Add small random impulse to prevent stagnation
+    if (this.velocity.length() < PHYSICS_CONSTANTS.MIN_VELOCITY * 3) {
+      if (currentTime - this.lastCollisionTime > 10000) { // 10 seconds
+        // Add smaller, more subtle random impulse
         const randomImpulse = new THREE.Vector3(
-          (Math.random() - 0.5) * 0.5,
-          Math.random() * 0.3,
-          (Math.random() - 0.5) * 0.5
+          (Math.random() - 0.5) * 0.3, // Reduced magnitude
+          Math.random() * 0.2,
+          (Math.random() - 0.5) * 0.3
         );
         this.velocity.add(randomImpulse);
         this.lastCollisionTime = currentTime;
@@ -168,47 +173,49 @@ export class Ball implements PhysicsObject {
       // The physics engine will handle the actual collision response
       // This method is called after physics resolution for any additional effects
       
-      // Add visual feedback for collision
+      // Add more subtle visual feedback for collision
       this.addCollisionEffect(collision);
     }
   }
 
   private addCollisionEffect(collision: Collision): void {
-    // Create temporary visual effect at collision point
+    // Create more subtle temporary visual effect at collision point
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const originalEmissive = material.emissive.clone();
     
-    // Flash effect
-    material.emissive.setHex(0xffffff);
+    // Gentler flash effect
+    material.emissive.setRGB(0.3, 0.6, 1.0); // Softer blue flash
     setTimeout(() => {
       material.emissive.copy(originalEmissive);
-    }, 100);
+    }, 50); // Shorter duration
 
-    // Scale effect
+    // Smaller scale effect
     const originalScale = this.mesh.scale.clone();
-    this.mesh.scale.multiplyScalar(1.2);
+    this.mesh.scale.multiplyScalar(1.05); // Much smaller scale change
     setTimeout(() => {
       this.mesh.scale.copy(originalScale);
-    }, 150);
+    }, 80); // Shorter duration
   }
 
   private reset(): void {
+    // Better reset positioning with more space
     this.position.set(
-      (Math.random() - 0.5) * 20,
-      50 + Math.random() * 20,
-      (Math.random() - 0.5) * 20
+      (Math.random() - 0.5) * 30,
+      80 + Math.random() * 40, // Higher and more variable starting height
+      (Math.random() - 0.5) * 30
     );
     
-    // Give it some initial velocity to ensure continuous motion
+    // Give it more substantial initial velocity to ensure continuous motion
     this.velocity.set(
-      (Math.random() - 0.5) * 4,
-      Math.random() * 2,
-      (Math.random() - 0.5) * 4
+      (Math.random() - 0.5) * 5,
+      Math.random() * 3,
+      (Math.random() - 0.5) * 5
     );
     
     this.trailPositions = [];
     this.energyHistory = [];
     this.lastCollisionTime = performance.now();
+    this.lastStagnationCheck = performance.now();
   }
 
   getKineticEnergy(): number {
