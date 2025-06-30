@@ -22,11 +22,16 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.position = position.clone();
     this.originalPosition = position.clone();
 
-    const material = new THREE.MeshLambertMaterial({
+    // Create brighter material with emissive glow
+    const material = new THREE.MeshPhongMaterial({
       color: color,
       wireframe: true,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.9,
+      emissive: new THREE.Color(color).multiplyScalar(0.3), // Add emissive glow
+      emissiveIntensity: 0.5,
+      shininess: 100,
+      specular: new THREE.Color(color).multiplyScalar(0.8)
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
@@ -47,9 +52,18 @@ export abstract class BasePrimitive implements PhysicsObject {
   abstract animate(deltaTime: number): void;
 
   update(deltaTime: number): void {
+    // Add subtle pulsing glow effect
+    const material = this.mesh.material as THREE.MeshPhongMaterial;
+    const pulseIntensity = 0.3 + Math.sin(performance.now() * 0.003) * 0.2;
+    material.emissiveIntensity = pulseIntensity;
+
     if (this.isAnimating) {
       this.animationTime += deltaTime;
       this.animate(deltaTime);
+
+      // Increase glow during animation
+      material.emissiveIntensity = pulseIntensity + 0.4;
+      material.opacity = 0.95;
 
       if (this.animationTime >= SIMULATION_CONSTANTS.ANIMATION_DURATION) {
         this.isAnimating = false;
@@ -62,15 +76,21 @@ export abstract class BasePrimitive implements PhysicsObject {
   onCollision(): void {
     this.isAnimating = true;
     this.animationTime = 0;
+    
+    // Flash effect on collision
+    const material = this.mesh.material as THREE.MeshPhongMaterial;
+    material.emissiveIntensity = 1.0;
+    material.opacity = 1.0;
   }
 
   private fadeOut(): void {
-    const material = this.mesh.material as THREE.MeshLambertMaterial;
-    const fadeStep = 0.1;
-    const fadeInterval = SIMULATION_CONSTANTS.FADE_DURATION * 100;
+    const material = this.mesh.material as THREE.MeshPhongMaterial;
+    const fadeStep = 0.05;
+    const fadeInterval = SIMULATION_CONSTANTS.FADE_DURATION * 50;
     
     const fade = setInterval(() => {
       material.opacity -= fadeStep;
+      material.emissiveIntensity -= fadeStep * 0.5;
       if (material.opacity <= 0) {
         clearInterval(fade);
         this.shouldRemove = true;
@@ -88,8 +108,9 @@ export abstract class BasePrimitive implements PhysicsObject {
     this.animationTime = 0;
     this.shouldRemove = false;
     
-    const material = this.mesh.material as THREE.MeshLambertMaterial;
-    material.opacity = 0.7;
+    const material = this.mesh.material as THREE.MeshPhongMaterial;
+    material.opacity = 0.9;
+    material.emissiveIntensity = 0.5;
 
     if (this.boundingBox && this.mesh.geometry.boundingBox) {
       this.boundingBox = this.mesh.geometry.boundingBox.clone();

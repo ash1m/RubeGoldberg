@@ -18,7 +18,7 @@ export class Ball implements PhysicsObject {
   private lastStagnationCheck = 0;
 
   constructor(scene: THREE.Scene) {
-    this.position = new THREE.Vector3(0, 80, 0); // Higher starting position
+    this.position = new THREE.Vector3(0, 80, 0);
     this.velocity = new THREE.Vector3(
       (Math.random() - 0.5) * 3,
       0,
@@ -34,9 +34,11 @@ export class Ball implements PhysicsObject {
     const material = new THREE.MeshPhongMaterial({ 
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       shininess: 100,
-      specular: 0x444444
+      specular: 0x888888,
+      emissive: new THREE.Color(0x00ffff).multiplyScalar(0.2),
+      emissiveIntensity: 0.4
     });
     
     this.mesh = new THREE.Mesh(geometry, material);
@@ -55,9 +57,9 @@ export class Ball implements PhysicsObject {
     trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const trailMaterial = new THREE.PointsMaterial({
-      size: 0.15,
+      size: 0.2,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       vertexColors: true,
       blending: THREE.AdditiveBlending
     });
@@ -81,13 +83,19 @@ export class Ball implements PhysicsObject {
     // Update energy history for analysis
     this.updateEnergyHistory();
 
-    // Apply subtle glow effect based on velocity
+    // Enhanced glow effect based on velocity
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
-    material.emissive.setHSL(0.5, 0.8, velocityFactor * 0.2); // Reduced glow intensity
+    
+    // Brighter emissive glow that changes with velocity
+    const hue = 0.5 + velocityFactor * 0.3; // Cyan to blue-white
+    const saturation = 0.8;
+    const lightness = 0.3 + velocityFactor * 0.4;
+    material.emissive.setHSL(hue, saturation, lightness);
+    material.emissiveIntensity = 0.4 + velocityFactor * 0.6;
 
     // Reset if ball falls too far (with better positioning)
-    if (this.position.y < -300) { // Deeper threshold before reset
+    if (this.position.y < -300) {
       this.reset();
     }
 
@@ -115,13 +123,14 @@ export class Ball implements PhysicsObject {
       positions[i * 3 + 1] = pos.y;
       positions[i * 3 + 2] = pos.z;
 
-      // Create velocity-based color gradient
+      // Brighter velocity-based color gradient
       const alpha = i / SIMULATION_CONSTANTS.MAX_TRAIL_LENGTH;
       const velocityFactor = Math.min(this.velocity.length() / PHYSICS_CONSTANTS.MAX_VELOCITY, 1);
       
-      colors[i * 3] = alpha * velocityFactor; // R
-      colors[i * 3 + 1] = alpha; // G
-      colors[i * 3 + 2] = 1; // B
+      // Enhanced trail colors
+      colors[i * 3] = alpha * velocityFactor * 1.5; // R - brighter
+      colors[i * 3 + 1] = alpha * 1.2; // G - brighter
+      colors[i * 3 + 2] = 1.5; // B - much brighter
     }
 
     this.trail.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -142,16 +151,13 @@ export class Ball implements PhysicsObject {
   private preventStagnation(): void {
     const currentTime = performance.now();
     
-    // Check less frequently and with higher threshold
-    if (currentTime - this.lastStagnationCheck < 8000) return; // Check every 8 seconds
+    if (currentTime - this.lastStagnationCheck < 8000) return;
     this.lastStagnationCheck = currentTime;
     
-    // Check if ball has been moving too slowly for too long
     if (this.velocity.length() < PHYSICS_CONSTANTS.MIN_VELOCITY * 3) {
-      if (currentTime - this.lastCollisionTime > 10000) { // 10 seconds
-        // Add smaller, more subtle random impulse
+      if (currentTime - this.lastCollisionTime > 10000) {
         const randomImpulse = new THREE.Vector3(
-          (Math.random() - 0.5) * 0.3, // Reduced magnitude
+          (Math.random() - 0.5) * 0.3,
           Math.random() * 0.2,
           (Math.random() - 0.5) * 0.3
         );
@@ -166,46 +172,43 @@ export class Ball implements PhysicsObject {
     this.lastCollisionTime = currentTime;
 
     for (const collision of collisions) {
-      // Store impact velocity for analysis
       collision.impactVelocity = this.velocity.length();
       collision.contactPoint = this.position.clone();
-
-      // The physics engine will handle the actual collision response
-      // This method is called after physics resolution for any additional effects
       
-      // Add more subtle visual feedback for collision
       this.addCollisionEffect(collision);
     }
   }
 
   private addCollisionEffect(collision: Collision): void {
-    // Create more subtle temporary visual effect at collision point
+    // Enhanced collision visual effect
     const material = this.mesh.material as THREE.MeshPhongMaterial;
     const originalEmissive = material.emissive.clone();
+    const originalIntensity = material.emissiveIntensity;
     
-    // Gentler flash effect
-    material.emissive.setRGB(0.3, 0.6, 1.0); // Softer blue flash
+    // Bright white flash effect
+    material.emissive.setRGB(1.0, 1.0, 1.0);
+    material.emissiveIntensity = 1.5;
+    
     setTimeout(() => {
       material.emissive.copy(originalEmissive);
-    }, 50); // Shorter duration
+      material.emissiveIntensity = originalIntensity;
+    }, 100);
 
-    // Smaller scale effect
+    // Enhanced scale effect
     const originalScale = this.mesh.scale.clone();
-    this.mesh.scale.multiplyScalar(1.05); // Much smaller scale change
+    this.mesh.scale.multiplyScalar(1.15);
     setTimeout(() => {
       this.mesh.scale.copy(originalScale);
-    }, 80); // Shorter duration
+    }, 120);
   }
 
   private reset(): void {
-    // Better reset positioning with more space
     this.position.set(
       (Math.random() - 0.5) * 30,
-      80 + Math.random() * 40, // Higher and more variable starting height
+      80 + Math.random() * 40,
       (Math.random() - 0.5) * 30
     );
     
-    // Give it more substantial initial velocity to ensure continuous motion
     this.velocity.set(
       (Math.random() - 0.5) * 5,
       Math.random() * 3,

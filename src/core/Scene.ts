@@ -14,8 +14,9 @@ export class SceneManager {
 
   private createScene(): THREE.Scene {
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000011);
-    scene.fog = new THREE.Fog(0x000011, 100, 500);
+    // Lighter background for better contrast
+    scene.background = new THREE.Color(0x001122);
+    scene.fog = new THREE.Fog(0x001122, 100, 500);
     return scene;
   }
 
@@ -34,22 +35,47 @@ export class SceneManager {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Enhanced renderer settings for better glow effects
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    
     container.appendChild(renderer.domElement);
     return renderer;
   }
 
   private setupLighting(): void {
-    // Ambient lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+    // Brighter ambient lighting
+    const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
     this.scene.add(ambientLight);
 
-    // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    // Enhanced directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -100;
+    directionalLight.shadow.camera.right = 100;
+    directionalLight.shadow.camera.top = 100;
+    directionalLight.shadow.camera.bottom = -100;
     this.scene.add(directionalLight);
+
+    // Add additional point lights for better illumination
+    const pointLight1 = new THREE.PointLight(0x4488ff, 0.5, 200);
+    pointLight1.position.set(50, 50, 50);
+    this.scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0xff4488, 0.5, 200);
+    pointLight2.position.set(-50, 50, -50);
+    this.scene.add(pointLight2);
+
+    // Add hemisphere light for overall brightness
+    const hemisphereLight = new THREE.HemisphereLight(0x4488ff, 0x002244, 0.4);
+    this.scene.add(hemisphereLight);
   }
 
   updateCamera(ballPosition: THREE.Vector3): void {
