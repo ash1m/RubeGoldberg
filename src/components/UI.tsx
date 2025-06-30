@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Monitor, TrendingUp, Clock } from 'lucide-react';
+import { Target, Monitor, TrendingUp, Clock, Zap } from 'lucide-react';
 
 interface UIProps {
   metrics: {
@@ -166,6 +166,20 @@ export const UI: React.FC<UIProps> = ({ metrics, timeScale, onTimeScaleChange })
           realistic collision responses with momentum conservation, and energy-based interactions. 
           Motion persists indefinitely through force accumulation and anti-stagnation systems.
         </p>
+      </div>
+
+      {/* Built with Bolt Badge */}
+      <div className="fixed bottom-4 right-4 z-10">
+        <a
+          href="https://bolt.new"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 border border-blue-400/30"
+        >
+          <Zap className="w-4 h-4 text-yellow-300 group-hover:text-yellow-200 transition-colors" />
+          <span className="text-sm font-semibold">Built with Bolt</span>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        </a>
       </div>
     </div>
   );
