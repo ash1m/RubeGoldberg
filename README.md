@@ -1,16 +1,24 @@
 # Rube Goldberg 3D Simulation
 
 > An infinite, unique experience through digital art - a Rube Goldberg's absurdist mechanics simulation using simple 3D shapes in space.
+>
+> 
+<!-- Create visual badges -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-green.svg" alt="Status">
+  <img src="https://img.shields.io/badge/Version-1.0-blue.svg" alt="Version">
+</p>
 
 ## 📸 Demo
 
-<!-- Screenshot -->
-![Project Screenshot](./screenshots/main-view.png)
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=U_MRRu9B1zo">
+    <img src="RubeGoldbergSpace.png" alt="Watch Demo" width="500">
+    <br>
+    ▶️ Click to watch demo
+  </a>
+</div>
 
-
-<!-- Video (GitHub supports MP4) -->
-[https://user-images.githubusercontent.com/YOUR-USERNAME/VIDEO-ID.mp4
-](https://www.youtube.com/watch?v=U_MRRu9B1zo)
 
 ## 🎯 Inspiration
 
